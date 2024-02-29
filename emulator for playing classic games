@@ -29,6 +29,16 @@ keypad = [0] * 16
 # Chip-8 display
 display = [0] * (64 * 32)
 
+# Load the font set into memory
+font_set = [
+    0xF0, 0x90, 0x90, 0x90, 0xF0,  # 0
+    0x20, 0x60, 0x20, 0x20, 0x70,  # 1
+    # ... (complete font set)
+]
+
+for i in range(len(font_set)):
+    memory[i] = font_set[i]
+
 # Load the ROM into memory
 def load_rom(filename):
     with open(filename, 'rb') as f:
@@ -42,8 +52,27 @@ def fetch_decode_execute():
 
     opcode = (memory[pc] << 8) | memory[pc + 1]
 
-    # Example: NOP (no operation)
-    pc += 2
+    x = (opcode & 0x0F00) >> 8
+    y = (opcode & 0x00F0) >> 4
+    nn = opcode & 0x00FF
+    nnn = opcode & 0x0FFF
+
+    # Example instructions (incomplete)
+    if opcode == 0x00E0:  # CLS - Clear the display
+        display = [0] * (64 * 32)
+        pc += 2
+    elif opcode == 0x00EE:  # RET - Return from subroutine
+        pc = stack.pop()
+    elif opcode & 0xF000 == 0x1000:  # JP addr - Jump to address
+        pc = nnn
+    elif opcode & 0xF000 == 0x2000:  # CALL addr - Call subroutine
+        stack.append(pc + 2)
+        pc = nnn
+    elif opcode & 0xF000 == 0x3000:  # SE Vx, byte - Skip next instruction if Vx == byte
+        pc += 2 if V[x] == nn else 4
+    # Add more instructions as needed...
+
+    # Update program counter
 
 # Main loop
 def main_loop():
@@ -60,6 +89,7 @@ def main_loop():
         fetch_decode_execute()
 
         # Update display
+        # (You need to implement this part using Pygame)
 
         clock.tick(600)  # Adjust the speed of the emulator
 
@@ -68,3 +98,4 @@ load_rom('rom_filename')
 
 # Start the emulator
 main_loop()
+
